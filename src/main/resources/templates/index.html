@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notebook</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<div class="container">
+    <h1>Notebook</h1>
+
+    <section class="card">
+        <h2>Add a note</h2>
+        <form th:action="@{/notes}" th:object="${noteForm}" method="post" novalidate>
+            <div class="form-group">
+                <label for="title">Title</label>
+                <input id="title" type="text" th:field="*{title}" placeholder="Note title">
+                <p class="error" th:if="${#fields.hasErrors('title')}" th:errors="*{title}"></p>
+            </div>
+
+            <div class="form-group">
+                <label for="content">Content</label>
+                <textarea id="content" th:field="*{content}" rows="4" placeholder="Write your note..."></textarea>
+                <p class="error" th:if="${#fields.hasErrors('content')}" th:errors="*{content}"></p>
+            </div>
+
+            <button type="submit">Save Note</button>
+        </form>
+    </section>
+
+    <section class="card">
+        <h2>Saved notes</h2>
+
+        <p th:if="${#lists.isEmpty(notes)}">No notes yet. Add your first note above.</p>
+
+        <ul class="note-list" th:if="${!#lists.isEmpty(notes)}">
+            <li class="note-item" th:each="note : ${notes}">
+                <h3 th:text="${note.title}">Note title</h3>
+                <p class="timestamp" th:text="${#temporals.format(note.createdAt, 'yyyy-MM-dd HH:mm:ss')}">2026-01-01 12:00:00</p>
+                <p class="content" th:text="${note.content}">Note content</p>
+            </li>
+        </ul>
+    </section>
+</div>
+</body>
+</html>
+
