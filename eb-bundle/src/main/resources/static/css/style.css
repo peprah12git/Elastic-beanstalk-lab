@@ -1,0 +1,95 @@
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #f7f7f9;
+    color: #1f2937;
+}
+
+.container {
+    max-width: 800px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+}
+
+h1 {
+    margin-bottom: 1rem;
+}
+
+.card {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.form-group {
+    margin-bottom: 0.75rem;
+}
+
+label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+}
+
+input,
+textarea {
+    width: 100%;
+    box-sizing: border-box;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    padding: 0.5rem;
+    font: inherit;
+}
+
+button {
+    border: none;
+    border-radius: 6px;
+    padding: 0.55rem 1rem;
+    background: #2563eb;
+    color: #ffffff;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #1d4ed8;
+}
+
+.error {
+    margin-top: 0.25rem;
+    color: #b91c1c;
+    font-size: 0.9rem;
+}
+
+.note-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.note-item {
+    border-top: 1px solid #e5e7eb;
+    padding: 0.75rem 0;
+}
+
+.note-item:first-child {
+    border-top: none;
+    padding-top: 0;
+}
+
+.note-item h3 {
+    margin: 0 0 0.25rem;
+}
+
+.timestamp {
+    margin: 0 0 0.5rem;
+    color: #6b7280;
+    font-size: 0.85rem;
+}
+
+.content {
+    margin: 0;
+    white-space: pre-wrap;
+}
+
