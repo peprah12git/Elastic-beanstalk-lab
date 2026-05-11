@@ -42,6 +42,8 @@ jobs:
       - name: Zip JAR and Procfile
         run: zip app.zip target/notebook-0.0.1-SNAPSHOT.jar Procfile
 
+      - name: Debug zip contents
+        run: unzip -l app.zip
 
       - name: Upload bundle to S3
         run: |
