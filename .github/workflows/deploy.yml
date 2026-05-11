@@ -32,12 +32,16 @@ jobs:
       - name: Build JAR with Maven
         run: mvn clean package -DskipTests
 
+      - name: List target directory
+        run: ls -la target/
+
       - name: Set version label
         id: version
         run: echo "label=v-$(date +%Y%m%d%H%M%S)" >> $GITHUB_OUTPUT
 
       - name: Zip JAR and Procfile
         run: zip app.zip target/notebook-0.0.1-SNAPSHOT.jar Procfile
+
 
       - name: Upload bundle to S3
         run: |
