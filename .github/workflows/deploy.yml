@@ -1,17 +1,24 @@
-name: Deploy to Elastic Beanstalk
+name: Build and Deploy to Elastic Beanstalk
 
 on:
   push:
     branches:
       - main
 
-permissions:
-  id-token: write
-  contents: read
+env:
+  AWS_REGION: ${{ vars.AWS_REGION }}
+  EB_APP_NAME: ${{ vars.EB_APP_NAME }}
+  EB_ENV_NAME: ${{ vars.EB_ENV_NAME }}
+  S3_BUCKET: ${{ vars.S3_BUCKET }}
+  AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+      contents: read
 
     steps:
       - name: Checkout code
@@ -20,59 +27,77 @@ jobs:
       - name: Configure AWS credentials via OIDC
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::897722679541:role/github-actions-eb-role
-          aws-region: eu-north-1
+          role-to-assume: ${{ env.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
 
       - name: Set up Java 17
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'corretto'
+          cache: maven
 
       - name: Build JAR with Maven
-        run: mvn clean package -DskipTests
+        run: |
+          chmod +x mvnw
+          ./mvnw clean package -DskipTests=true
 
       - name: Set version label
         id: version
-        run: echo "label=v-$(date +%Y%m%d%H%M%S)" >> $GITHUB_OUTPUT
+        run: echo "label=v-$(date +%Y%m%d%H%M%S)-${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
 
-      - name: Zip JAR and Procfile
+      - name: Prepare deployment bundle
         run: |
-            cp Procfile target/
-            cd target
-            zip ../app.zip notebook-0.0.1-SNAPSHOT.jar Procfile
+          mkdir -p deployment
+          cp target/notebook-0.0.1-SNAPSHOT.jar deployment/myapp.jar
+          cp Procfile deployment/Procfile
+          cd deployment
+          zip -r ../app.zip . -x "*.DS_Store"
+          ls -lh ../app.zip
 
-      - name: Debug zip contents
+      - name: Verify zip contents
         run: unzip -l app.zip
 
       - name: Upload bundle to S3
         run: |
-          aws s3 cp app.zip s3://elasticbeanstalk-eu-north-1-897722679541/${{ steps.version.outputs.label }}.zip
+          aws s3 cp app.zip s3://${{ env.S3_BUCKET }}/${{ steps.version.outputs.label }}.zip
 
       - name: Create new EB application version
         run: |
           aws elasticbeanstalk create-application-version \
-            --application-name ${{ secrets.EB_APP_NAME }} \
+            --application-name ${{ env.EB_APP_NAME }} \
             --version-label ${{ steps.version.outputs.label }} \
-            --source-bundle S3Bucket="elasticbeanstalk-eu-north-1-897722679541",S3Key="${{ steps.version.outputs.label }}.zip"
+            --source-bundle S3Bucket=${{ env.S3_BUCKET }},S3Key=${{ steps.version.outputs.label }}.zip \
+            --region ${{ env.AWS_REGION }}
 
       - name: Deploy to Elastic Beanstalk
         run: |
           aws elasticbeanstalk update-environment \
-            --application-name ${{ secrets.EB_APP_NAME }} \
-            --environment-name ${{ secrets.EB_ENV_NAME }} \
-            --version-label ${{ steps.version.outputs.label }}
+            --application-name ${{ env.EB_APP_NAME }} \
+            --environment-name ${{ env.EB_ENV_NAME }} \
+            --version-label ${{ steps.version.outputs.label }} \
+            --region ${{ env.AWS_REGION }}
 
       - name: Wait for deployment to complete
         run: |
           aws elasticbeanstalk wait environment-updated \
-            --application-name ${{ secrets.EB_APP_NAME }} \
-            --environment-names ${{ secrets.EB_ENV_NAME }}
+            --application-name ${{ env.EB_APP_NAME }} \
+            --environment-names ${{ env.EB_ENV_NAME }} \
+            --region ${{ env.AWS_REGION }}
 
       - name: Verify deployment
         run: |
-          aws elasticbeanstalk describe-environments \
-            --application-name ${{ secrets.EB_APP_NAME }} \
-            --environment-names ${{ secrets.EB_ENV_NAME }} \
-            --query "Environments[0].{Status:Status,Health:Health,Version:VersionLabel}" \
-            --output table
+          ENV_STATUS=$(aws elasticbeanstalk describe-environments \
+            --application-name ${{ env.EB_APP_NAME }} \
+            --environment-names ${{ env.EB_ENV_NAME }} \
+            --region ${{ env.AWS_REGION }} \
+            --query 'Environments[0].Status' \
+            --output text)
+          echo "Environment status: $ENV_STATUS"
+          if [ "$ENV_STATUS" = "Ready" ]; then
+            echo "Deployment successful!"
+            exit 0
+          else
+            echo "Deployment failed. Status: $ENV_STATUS"
+            exit 1
+          fi
