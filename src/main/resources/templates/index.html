@@ -21,7 +21,7 @@
 
             <div class="form-group">
                 <label for="content">Content</label>
-                <textarea id="content" th:field="*{content}" rows="4" placeholder="Write your note..."></textarea>
+                <textarea id="content" th:field="*{content}" rows="4" placeholder="Write your own note..."></textarea>
                 <p class="error" th:if="${#fields.hasErrors('content')}" th:errors="*{content}"></p>
             </div>
 
