@@ -1,1 +1,1 @@
-web: java -Dserver.port=5000 -jar notebook-0.0.1-SNAPSHOT.jar
+cp target/notebook-0.0.1-SNAPSHOT.jar deployment/myapp.jar
