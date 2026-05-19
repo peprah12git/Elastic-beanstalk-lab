@@ -24,19 +24,21 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # Authenticate with AWS using OIDC — no stored credentials needed
       - name: Configure AWS credentials via OIDC
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ env.AWS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
 
+      #Install Java 17 with Maven dependency caching
       - name: Set up Java 17
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'corretto'
           cache: maven
-
+      # Compile and package the Spring Boot app into a fat JAR
       - name: Build JAR with Maven
         run: |
           chmod +x mvnw
@@ -45,7 +47,7 @@ jobs:
       - name: Set version label
         id: version
         run: echo "label=v-$(date +%Y%m%d%H%M%S)-${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
-
+      # Package JAR and Procfile into a ZIP with both files at root level
       - name: Prepare deployment bundle
         run: |
           mkdir -p deployment
@@ -55,6 +57,7 @@ jobs:
           zip -r ../app.zip . -x "*.DS_Store"
           ls -lh ../app.zip
 
+      # Confirm JAR and Procfile are at root level before uploading
       - name: Verify zip contents
         run: unzip -l app.zip
 
@@ -62,6 +65,7 @@ jobs:
         run: |
           aws s3 cp app.zip s3://${{ env.S3_BUCKET }}/${{ steps.version.outputs.label }}.zip
 
+      # Register the S3 bundle as a named EB application version
       - name: Create new EB application version
         run: |
           aws elasticbeanstalk create-application-version \
@@ -85,9 +89,10 @@ jobs:
             --environment-names ${{ env.EB_ENV_NAME }} \
             --region ${{ env.AWS_REGION }}
 
+  # Fail the workflow if EB environment is not in Ready state after deployment
       - name: Verify deployment
         run: |
-          ENV_STATUS=$(aws elasticbeanstalk describe-environments \
+          ENV_STATUS=$(aws elasticbeanstalk describe-environments \  
             --application-name ${{ env.EB_APP_NAME }} \
             --environment-names ${{ env.EB_ENV_NAME }} \
             --region ${{ env.AWS_REGION }} \
