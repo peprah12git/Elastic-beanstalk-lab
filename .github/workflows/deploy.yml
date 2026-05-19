@@ -89,10 +89,10 @@ jobs:
             --environment-names ${{ env.EB_ENV_NAME }} \
             --region ${{ env.AWS_REGION }}
 
-  # Fail the workflow if EB environment is not in Ready state after deployment
+      # Fail the workflow if EB environment is not in Ready state
       - name: Verify deployment
         run: |
-          ENV_STATUS=$(aws elasticbeanstalk describe-environments \  
+          ENV_STATUS=$(aws elasticbeanstalk describe-environments \
             --application-name ${{ env.EB_APP_NAME }} \
             --environment-names ${{ env.EB_ENV_NAME }} \
             --region ${{ env.AWS_REGION }} \
