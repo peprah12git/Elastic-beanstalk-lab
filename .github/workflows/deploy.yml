@@ -47,6 +47,7 @@ jobs:
       - name: Set version label
         id: version
         run: echo "label=v-$(date +%Y%m%d%H%M%S)-${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
+
       # Package JAR and Procfile into a ZIP with both files at root level
       - name: Prepare deployment bundle
         run: |
@@ -89,7 +90,7 @@ jobs:
             --environment-names ${{ env.EB_ENV_NAME }} \
             --region ${{ env.AWS_REGION }}
 
-      # Fail the workflow if EB environment is not in Ready state
+      # Fail the workflow/pipeline if EB environment is not in Ready state
       - name: Verify deployment
         run: |
           ENV_STATUS=$(aws elasticbeanstalk describe-environments \
